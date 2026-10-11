@@ -1,4 +1,4 @@
-namespace OOP_Project
+namespace OOP_project
 {
     public class Trainer : Person
     {
@@ -7,9 +7,9 @@ namespace OOP_Project
         {
             this.Specialization = specialization;
         }
-        public void AsssignClass(fitnessClass FitnessClass)
+        public void AsssignClass(FitnessClass fitnessClass)
         {
-       
-       }
+            fitnessClass.Trainer = this;
+        }
     }
 }

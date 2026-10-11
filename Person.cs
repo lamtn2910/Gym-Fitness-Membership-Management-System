@@ -1,6 +1,6 @@
-namespace OOP_Project
+namespace OOP_project
 {
-    abstract class Person
+    public abstract class Person
     {
         protected string Id;
         protected string Name;

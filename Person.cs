@@ -2,7 +2,7 @@ namespace OOP_project
 {
     public abstract class Person
     {
-        protected string Id;
+        public string Id;
         protected string Name;
         protected string Email;
         protected string PhoneNumber;

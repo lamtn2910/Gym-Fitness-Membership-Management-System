@@ -2,13 +2,13 @@ namespace OOP_project
 {
     public class FitnessClass
     {
-        private string ClassId { get;set; }
-        private string ClassName { get;set; }
-        private DateTime ScheduleTime { get;set; }
-        private int Capacity { get;set; }
-        private Trainer Trainer { get;set; }
-        private List<Booking> Roster { get;set; }
-        private Queue<Booking> WaitList { get;set; }
+        public string ClassId { get;set; }
+        public string ClassName { get;set; }
+        public DateTime ScheduleTime { get;set; }
+        public int Capacity { get;set; }
+        public Trainer Trainer { get;set; }
+        public List<Booking> Roster { get;set; }
+        public Queue<Booking> WaitList { get;set; }
 
         public FitnessClass(string classId, string className, DateTime scheduleTime, int capacity, Trainer trainer)
         {

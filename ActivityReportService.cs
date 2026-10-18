@@ -1,5 +1,4 @@
 using System.Text; // cho StringBuilder
-using System.Linq; // cho .Any() và .Count()
 namespace OOP_project
 {
     public class ActivityReportService

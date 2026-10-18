@@ -3,9 +3,9 @@ namespace OOP_project
     public abstract class Person
     {
         public string Id;
-        protected string Name;
-        protected string Email;
-        protected string PhoneNumber;
+        protected string? Name;
+        protected string? Email;
+        protected string? PhoneNumber;
         public Person(string id , string name, string email, string phoneNumber)
         {
             this.Id = id;

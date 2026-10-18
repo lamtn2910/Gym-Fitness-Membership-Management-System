@@ -2,18 +2,18 @@ namespace OOP_project
 {
     public class Member : Person
     {
-        private MembershipPlan currentPlan { get; set; }
-        private DateTime joinDate { get; set; }
-        private DateTime planExpiryDate { get; set; }
+        public MembershipPlan CurrentPlan { get; set; }
+        public DateTime JoinDate { get; set; }
+        public DateTime PlanExpiryDate { get; set; }
         private int currentMonthlyBookings = 0 ;
         public Member(string id, string name, string email, string phoneNumber) : base(id, name, email, phoneNumber) {}
         public void ChangePlan(MembershipPlan newPlan)
         {
-            currentPlan = newPlan;
+            CurrentPlan = newPlan;
         }
         public MembershipPlan GetCurrentPlan()
         {
-            return currentPlan;
+            return CurrentPlan;
         }
         public int GetMonthlyBookingCount()
         {
@@ -22,11 +22,10 @@ namespace OOP_project
         }
         public bool CanBookMore()
         {
-            if (currentPlan == null) return false;
+            if (CurrentPlan == null) return false;
 
             // Gọi hàm canBookClass từ MembershipPlan
-            // và truyền vào số lượng class đã book hiện tại.
-            return currentPlan.CanBookClass(this.GetMonthlyBookingCount());
+            return CurrentPlan.CanBookClass(currentMonthlyBookings);
         }
     }
 }

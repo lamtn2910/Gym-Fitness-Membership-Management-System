@@ -6,7 +6,7 @@ namespace OOP_project
         public DateTime JoinDate { get; set; }
         public DateTime PlanExpiryDate { get; set; }
         private int currentMonthlyBookings = 0 ;
-        public Member(string id, string name, string email, string phoneNumber) : base(id, name, email, phoneNumber) {}
+        public Member(string id, string name, string email, string phoneNumber ) : base(id, name, email, phoneNumber) {}
         public void ChangePlan(MembershipPlan newPlan)
         {
             CurrentPlan = newPlan;

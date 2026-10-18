@@ -1,3 +1,6 @@
+using System.ComponentModel.DataAnnotations;
+using System.Numerics;
+
 namespace OOP_project
 {
     public class Admin
@@ -19,6 +22,9 @@ namespace OOP_project
                 new Member("M002", "Tran Thi B", "tranthib@example.com", "0901234568"),
                 new Member("M003", "Le Van C", "levanc@example.com", "0901234569")
             ]);
+            Members[0].CurrentPlan = new BasicPlan();
+            Members[1].CurrentPlan = new BasicPlan();
+            Members[2].CurrentPlan = new BasicPlan();
             Trainers = new List<Trainer>();
             FitnessClasses = new List<FitnessClass>();
             
@@ -63,7 +69,19 @@ namespace OOP_project
                         string? email = Console.ReadLine();
                         Console.Write("Số điện thoại: ");
                         string? phone = Console.ReadLine();
+                        Console.Write("TypePlan (1 cho Basic 2 cho Premium): ");
+                        string? typeplan = Console.ReadLine();
                         Members.Add(new Member(id, name, email, phone));
+                        if( typeplan == "1")
+                        {
+                            var lastItem = Members[Members.Count - 1];
+                            lastItem.CurrentPlan = new BasicPlan();
+                        }
+                        else if (typeplan == "2" )
+                        {
+                            var lastItem = Members[Members.Count - 1];
+                            lastItem.CurrentPlan = new PremiumPlan();
+                        }
                         Console.WriteLine($"[Hệ thống] Hội viên {name} đã được thêm thành công.");
                         break;
                     case "2":

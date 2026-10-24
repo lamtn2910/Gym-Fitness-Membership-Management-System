@@ -2,11 +2,11 @@ namespace OOP_project
 {
     public class Member : Person
     {
-        public MembershipPlan CurrentPlan { get; set; }
+        public MembershipPlan? CurrentPlan { get; set; }
         public DateTime JoinDate { get; set; }
         public DateTime PlanExpiryDate { get; set; }
         private int currentMonthlyBookings = 0 ;
-        public Member(string id, string name, string email, string phoneNumber ) : base(id, name, email, phoneNumber) {}
+        public Member(string? id, string? name, string? email, string? phoneNumber ) : base(id, name, email, phoneNumber) {}
         public void ChangePlan(MembershipPlan newPlan)
         {
             CurrentPlan = newPlan;

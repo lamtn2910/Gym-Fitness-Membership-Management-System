@@ -6,7 +6,7 @@ namespace OOP_project
     public class Admin
     {
         // 1. Khởi tạo instance duy nhất (Singleton)
-        private static Admin _instance;
+        private static Admin? _instance;
 
         // Các danh sách dữ liệu giả lập Database
         public List<Member> Members { get; private set; }
@@ -25,7 +25,11 @@ namespace OOP_project
             Members[0].CurrentPlan = new BasicPlan();
             Members[1].CurrentPlan = new BasicPlan();
             Members[2].CurrentPlan = new BasicPlan();
-            Trainers = new List<Trainer>();
+            Trainers = new List<Trainer>([
+                new Trainer("T001", "Pham Van D", "phamvand@example.com", "0901234560", "Yoga"),
+                new Trainer("T002", "Hoang Thi E", "hoangthie@example.com", "0901234561", "Zumba"),
+                new Trainer("T003", "Nguyen Van F", "nguyenvanf@example.com", "0901234562", "Pilates")
+            ]);
             FitnessClasses = new List<FitnessClass>();
             
             Console.WriteLine("[Hệ thống] Tài khoản Admin đã được khởi tạo thành công.");
@@ -50,9 +54,11 @@ namespace OOP_project
                 Console.WriteLine("\n--- QUẢN LÝ HỘI VIÊN ---");
                 Console.WriteLine("1. Thêm hội viên mới");
                 Console.WriteLine("2. Xem danh sách hội viên");
-                Console.WriteLine("3. Nâng cấp/Hạ cấp gói tập (MembershipPlan)");
+                Console.WriteLine("3. Xóa hội viên");
+                Console.WriteLine("4. Cập nhật thông tin hội viên");
+                Console.WriteLine("5. Nâng cấp/Hạ cấp gói tập (MembershipPlan)");
                 Console.WriteLine("0. Quay lại menu chính");
-                Console.Write("Vui lòng chọn chức năng (0-3): ");
+                Console.Write("Vui lòng chọn chức năng (0-5): ");
 
                 string? choice = Console.ReadLine();
 
@@ -89,42 +95,77 @@ namespace OOP_project
                         Console.WriteLine("\n--- DANH SÁCH HỘI VIÊN ---");
                         foreach (var user in Members)
                         {
-                            Console.WriteLine($"ID: {user.Id}, Tên: {user.GetName()}");
+                            Console.WriteLine($"ID: {user.Id}, Tên: {user.Name}");
                         }
                         break;
                     case "3":
+                        // Logic xóa hội viên
+                        Console.Write("Nhập ID hội viên cần xóa: ");
+                        string? memberIdToDelete = Console.ReadLine();
+                        var memberToDelete = Members.FirstOrDefault(m => m.Id == memberIdToDelete);
+                        if (memberToDelete != null)
+                        {
+                            Members.Remove(memberToDelete);
+                            Console.WriteLine($"[Hệ thống] Hội viên {memberToDelete.Name} đã được xóa.");
+                        }
+                        else
+                        {
+                            Console.WriteLine("[Lỗi] Không tìm thấy hội viên với ID đã nhập.");
+                        }
+                        break;
+                    case "4":
+                        // Logic cập nhật thông tin hội viên
+                        Console.Write("Nhập ID hội viên cần cập nhật thông tin: ");
+                        string? memberIdToUpdate = Console.ReadLine();
+                        var memberToUpdate = Members.FirstOrDefault(m => m.Id == memberIdToUpdate);
+                        if (memberToUpdate != null)
+                        {
+                            Console.Write("Nhập tên mới cho hội viên: ");
+                            string? newName = Console.ReadLine();
+                            if (!string.IsNullOrWhiteSpace(newName))
+                            {
+                                memberToUpdate.Name = newName;
+                                Console.WriteLine($"[Hệ thống] Thông tin của hội viên {memberToUpdate.Name} đã được cập nhật.");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("[Lỗi] Không tìm thấy hội viên với ID đã nhập.");
+                        }
+                        break;
+                    case "5":
                         // Logic nâng cấp/hạ cấp gói tập
                         Console.Write("Nhập ID hội viên cần thay đổi gói tập: ");
-                        string? memberId = Console.ReadLine();
-                        var member = Members.FirstOrDefault(m => m.Id == memberId);
-                        if (member != null)
+                        string? memberIdToChangePlan = Console.ReadLine();
+                        var memberToChangePlan = Members.FirstOrDefault(m => m.Id == memberIdToChangePlan);
+                        if (memberToChangePlan != null)
                         {
                             Console.Write("Nhập gói tập mới chọn 1 cho Basic hoặc 2 cho Premium): ");
                             string? newPlan = Console.ReadLine();
                             // Cập nhật gói tập cho hội viên
                             if (newPlan == "1")
                             {
-                               if (member.CurrentPlan.GetPlanName() != "Basic")
-                               {
-                                   member.ChangePlan(new BasicPlan());
-                               }
-                               else
-                               {
-                                   Console.WriteLine($"[Hệ thống] Hội viên {member.GetName()} đã đang ở gói Basic.");
-                               }
-                            }
-                            else if (newPlan == "2")
-                            {
-                                if (member.CurrentPlan.GetPlanName() != "Premium")
+                                if (memberToChangePlan.CurrentPlan.GetPlanName() != "Basic")
                                 {
-                                    member.ChangePlan(new PremiumPlan());
+                                    memberToChangePlan.ChangePlan(new BasicPlan());
                                 }
                                 else
                                 {
-                                    Console.WriteLine($"[Hệ thống] Hội viên {member.GetName()} đã đang ở gói Premium.");
+                                    Console.WriteLine($"[Hệ thống] Hội viên {memberToChangePlan.Name} đã đang ở gói Basic.");
                                 }
                             }
-                            Console.WriteLine($"[Hệ thống] Gói tập của hội viên {member.GetName()} đã được cập nhật.");
+                            else if (newPlan == "2")
+                            {
+                                if (memberToChangePlan.CurrentPlan.GetPlanName() != "Premium")
+                                {
+                                    memberToChangePlan.ChangePlan(new PremiumPlan());
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"[Hệ thống] Hội viên {memberToChangePlan.Name} đã đang ở gói Premium.");
+                                }
+                            }
+                            Console.WriteLine($"[Hệ thống] Gói tập của hội viên {memberToChangePlan.Name} đã được cập nhật.");
                         }
                         else
                         {
@@ -143,11 +184,72 @@ namespace OOP_project
 
         public void ManageTrainers()
         {
+            while(true)
+            {
             Console.WriteLine("\n--- QUẢN LÝ HUẤN LUYỆN VIÊN ---");
             Console.WriteLine("1. Thêm huấn luyện viên mới");
-            Console.WriteLine("2. Phân công lớp học (assignClass)");
-            // Thêm logic nhập xuất tương ứng...
-            Console.WriteLine("[!] Đang chạy logic quản lý HLV...");
+            Console.WriteLine("2. Xem danh sách huấn luyện viên");
+            Console.WriteLine("3. Phân công lớp học (assignClass)");
+            Console.WriteLine("0. Quay lại menu chính");
+            string? choice = Console.ReadLine();
+            switch (choice)
+            {
+                case "1":
+                    // Logic thêm huấn luyện viên mới
+                    Console.WriteLine("Nhập thông tin huấn luyện viên mới :");
+                    Console.Write("ID: ");
+                    string? id = Console.ReadLine();
+                    Console.Write("Tên: ");
+                    string? name = Console.ReadLine();
+                    Console.Write("Email: ");
+                    string? email = Console.ReadLine();
+                    Console.Write("Số điện thoại: ");
+                    string? phone = Console.ReadLine();
+                    Console.Write("Chuyên môn: ");
+                    string? specialization = Console.ReadLine();
+                    Trainers.Add(new Trainer(id, name, email, phone, specialization));
+                    Console.WriteLine($"[Hệ thống] Huấn luyện viên {name} đã được thêm thành công.");
+                    break;
+                case "2":
+                    // Logic xem danh sách huấn luyện viên
+                    Console.WriteLine("\n--- DANH SÁCH HUẤN LUYỆN VIÊN ---");
+                    foreach (var train in Trainers)
+                    {
+                        Console.WriteLine($"ID: {train.Id}, Tên: {train.Name}, Email: {train.Email}, Số điện thoại: {train.PhoneNumber}, Chuyên môn: {train.Specialization}");
+                    }
+                    break;
+                case "3":
+                    // Logic phân công lớp học
+                    Console.Write("Nhập ID huấn luyện viên cần phân công lớp học: ");
+                    string? trainerId = Console.ReadLine();
+                    var trainer = Trainers.FirstOrDefault(t => t.Id == trainerId);
+                    if (trainer != null)
+                    {
+                        Console.Write("Nhập ID lớp học cần phân công: ");
+                        string? classId = Console.ReadLine();
+                        var fitnessClass = FitnessClasses.FirstOrDefault(fc => fc.ClassId == classId);
+                        if (fitnessClass != null)
+                        {
+                            trainer.AssignClass(fitnessClass);
+                            Console.WriteLine($"[Hệ thống] Huấn luyện viên {trainer.Name} đã được phân công lớp học {fitnessClass.ClassName}.");
+                        }
+                        else
+                        {
+                            Console.WriteLine("[Lỗi] Không tìm thấy lớp học với ID đã nhập.");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("[Lỗi] Không tìm thấy huấn luyện viên với ID đã nhập.");
+                    }
+                    break;
+                case "0":
+                    return; // Quay lại menu chính
+                default:
+                    Console.WriteLine("\n[Lỗi] Lựa chọn không hợp lệ. Vui lòng nhập số từ 1 đến 2.");
+                    break;
+            }
+            }
         }
 
         public void ManageFitnessClasses()

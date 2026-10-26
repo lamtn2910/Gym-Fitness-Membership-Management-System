@@ -30,7 +30,11 @@ namespace OOP_project
                 new Trainer("T002", "Hoang Thi E", "hoangthie@example.com", "0901234561", "Zumba"),
                 new Trainer("T003", "Nguyen Van F", "nguyenvanf@example.com", "0901234562", "Pilates")
             ]);
-            FitnessClasses = new List<FitnessClass>();
+            FitnessClasses = new List<FitnessClass>([
+                new FitnessClass("C001", "Yoga Class", DateTime.Now.AddDays(1), 10, Trainers[0]),
+                new FitnessClass("C002", "Zumba Class", DateTime.Now.AddDays(2), 15, Trainers[1]),
+                new FitnessClass("C003", "Pilates Class", DateTime.Now.AddDays(3), 12, Trainers[2])
+            ]);
             
             Console.WriteLine("[Hệ thống] Tài khoản Admin đã được khởi tạo thành công.");
         }
@@ -95,7 +99,7 @@ namespace OOP_project
                         Console.WriteLine("\n--- DANH SÁCH HỘI VIÊN ---");
                         foreach (var user in Members)
                         {
-                            Console.WriteLine($"ID: {user.Id}, Tên: {user.Name}");
+                            Console.WriteLine($"ID: {user.Id}, Tên: {user.Name}, Email: {user.Email}, Số điện thoại: {user.PhoneNumber}, Gói tập: {(user.CurrentPlan != null ? user.CurrentPlan.GetPlanName() : "Chưa có gói tập")}");
                         }
                         break;
                     case "3":
@@ -114,23 +118,68 @@ namespace OOP_project
                         }
                         break;
                     case "4":
-                        // Logic cập nhật thông tin hội viên
                         Console.Write("Nhập ID hội viên cần cập nhật thông tin: ");
                         string? memberIdToUpdate = Console.ReadLine();
                         var memberToUpdate = Members.FirstOrDefault(m => m.Id == memberIdToUpdate);
-                        if (memberToUpdate != null)
-                        {
-                            Console.Write("Nhập tên mới cho hội viên: ");
-                            string? newName = Console.ReadLine();
-                            if (!string.IsNullOrWhiteSpace(newName))
-                            {
-                                memberToUpdate.Name = newName;
-                                Console.WriteLine($"[Hệ thống] Thông tin của hội viên {memberToUpdate.Name} đã được cập nhật.");
-                            }
-                        }
-                        else
+                        if (memberToUpdate == null)
                         {
                             Console.WriteLine("[Lỗi] Không tìm thấy hội viên với ID đã nhập.");
+                            break;
+                        }
+                        // hỏi thông tin cần cập nhật name, email, phoneNumber
+                        Console.WriteLine("\n--- CẬP NHẬT THÔNG TIN HỘI VIÊN ---");
+                        Console.WriteLine("1. Cập nhật tên");
+                        Console.WriteLine("2. Cập nhật email");
+                        Console.WriteLine("3. Cập nhật số điện thoại");
+                        string? choiceToUpdate = Console.ReadLine();
+                        
+                        switch (choiceToUpdate)
+                        {
+                            case "1":
+                                // Logic cập nhật tên
+                                Console.Write("Nhập tên mới cho hội viên: ");
+                                string? newName = Console.ReadLine();
+                                if (!string.IsNullOrWhiteSpace(newName))
+                                {
+                                    memberToUpdate.Name = newName;
+                                    Console.WriteLine($"[Hệ thống] Thông tin của hội viên {memberToUpdate.Name} đã được cập nhật.");
+                                }
+                                else
+                                {
+                                    Console.WriteLine("[Lỗi] Tên không được để trống.");
+                                }
+                                break;
+                            case "2":
+                                // Logic cập nhật email
+                                Console.Write("Nhập email mới cho hội viên: ");
+                                string? newEmail = Console.ReadLine();
+                                if (!string.IsNullOrWhiteSpace(newEmail))
+                                {
+                                    memberToUpdate.Email = newEmail;
+                                    Console.WriteLine($"[Hệ thống] Thông tin của hội viên {memberToUpdate.Name} đã được cập nhật.");
+                                }
+                                else
+                                {
+                                    Console.WriteLine("[Lỗi] Email không được để trống.");
+                                }
+                                break;
+                            case "3":
+                                // Logic cập nhật số điện thoại
+                                Console.Write("Nhập số điện thoại mới cho hội viên: ");
+                                string? newPhone = Console.ReadLine();
+                                if (!string.IsNullOrWhiteSpace(newPhone))
+                                {
+                                    memberToUpdate.PhoneNumber = newPhone;
+                                    Console.WriteLine($"[Hệ thống] Thông tin của hội viên {memberToUpdate.Name} đã được cập nhật.");
+                                }
+                                else
+                                {
+                                    Console.WriteLine("[Lỗi] Số điện thoại không được để trống.");
+                                }
+                                break;
+                            default:
+                                Console.WriteLine("[Lỗi] Lựa chọn không hợp lệ.");
+                                break;
                         }
                         break;
                     case "5":
@@ -189,7 +238,9 @@ namespace OOP_project
             Console.WriteLine("\n--- QUẢN LÝ HUẤN LUYỆN VIÊN ---");
             Console.WriteLine("1. Thêm huấn luyện viên mới");
             Console.WriteLine("2. Xem danh sách huấn luyện viên");
-            Console.WriteLine("3. Phân công lớp học (assignClass)");
+            Console.WriteLine("3. Xóa huấn luyện viên");
+            Console.WriteLine("4. Sửa thông tin huấn luyện viên");
+            Console.WriteLine("5. Phân công lớp họ");
             Console.WriteLine("0. Quay lại menu chính");
             string? choice = Console.ReadLine();
             switch (choice)
@@ -219,6 +270,68 @@ namespace OOP_project
                     }
                     break;
                 case "3":
+                    // Logic xóa huấn luyện viên
+                    Console.Write("Nhập ID huấn luyện viên cần xóa: ");
+                    string? trainerIdToDelete = Console.ReadLine();
+                    var trainerToDelete = Trainers.FirstOrDefault(t => t.Id == trainerIdToDelete);
+                    if (trainerToDelete != null)
+                    {
+                        Trainers.Remove(trainerToDelete);
+                        Console.WriteLine($"[Hệ thống] Huấn luyện viên {trainerToDelete.Name} đã được xóa.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("[Lỗi] Không tìm thấy huấn luyện viên với ID đã nhập.");
+                    }
+                    break;
+                case "4":
+                    // Logic sửa thông tin huấn luyện viên
+                    Console.Write("Nhập ID huấn luyện viên cần sửa thông tin: ");
+                    string? trainerIdToUpdate = Console.ReadLine();
+                    var trainerToUpdate = Trainers.FirstOrDefault(t => t.Id == trainerIdToUpdate);
+                    if (trainerToUpdate != null)
+                    {
+                        Console.WriteLine("\n--- CẬP NHẬT THÔNG TIN HUẤN LUYỆN VIÊN ---");
+                        Console.WriteLine("1. Cập nhật tên");
+                        Console.WriteLine("2. Cập nhật email");
+                        Console.WriteLine("3. Cập nhật số điện thoại");
+                        Console.WriteLine("4. Cập nhật chuyên môn");
+                        Console.Write("Lựa chọn của bạn (1-4): ");
+                        string? choiceToUpdate = Console.ReadLine();
+
+                        switch (choiceToUpdate)
+                        {
+                            case "1":
+                                Console.Write("Tên mới: ");
+                                string? newName = Console.ReadLine();
+                                trainerToUpdate.Name = newName;
+                                break;
+                            case "2":
+                                Console.Write("Email mới: ");
+                                string? newEmail = Console.ReadLine();
+                                trainerToUpdate.Email = newEmail;
+                                break;
+                            case "3":
+                                Console.Write("Số điện thoại mới: ");
+                                string? newPhone = Console.ReadLine();
+                                trainerToUpdate.PhoneNumber = newPhone;
+                                break;
+                            case "4":
+                                Console.Write("Chuyên môn mới: ");
+                                string? newSpecialization = Console.ReadLine();
+                                trainerToUpdate.Specialization = newSpecialization;
+                                break;
+                            default:
+                                Console.WriteLine("[Lỗi] Lựa chọn không hợp lệ.");
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("[Lỗi] Không tìm thấy huấn luyện viên với ID đã nhập.");
+                    }
+                    break;
+                case "5":
                     // Logic phân công lớp học
                     Console.Write("Nhập ID huấn luyện viên cần phân công lớp học: ");
                     string? trainerId = Console.ReadLine();
@@ -228,7 +341,7 @@ namespace OOP_project
                         Console.Write("Nhập ID lớp học cần phân công: ");
                         string? classId = Console.ReadLine();
                         var fitnessClass = FitnessClasses.FirstOrDefault(fc => fc.ClassId == classId);
-                        if (fitnessClass != null)
+                        if (fitnessClass != null && trainer.Specialization == fitnessClass.ClassName.Split(' ')[0]) // Kiểm tra chuyên môn
                         {
                             trainer.AssignClass(fitnessClass);
                             Console.WriteLine($"[Hệ thống] Huấn luyện viên {trainer.Name} đã được phân công lớp học {fitnessClass.ClassName}.");
@@ -254,11 +367,176 @@ namespace OOP_project
 
         public void ManageFitnessClasses()
         {
-            Console.WriteLine("\n--- QUẢN LÝ LỚP HỌC (FITNESS CLASS) ---");
-            Console.WriteLine("1. Tạo lớp học mới (set ScheduleTime, Capacity)");
-            Console.WriteLine("2. Xem danh sách lớp học");
-            // Thêm logic nhập xuất tương ứng...
-            Console.WriteLine("[!] Đang chạy logic tạo/xem lớp học...");
+            while (true)
+            {
+                Console.WriteLine("\n--- QUẢN LÝ LỚP HỌC (FITNESS CLASS) ---");
+                Console.WriteLine("1. Tạo lớp học mới (set ScheduleTime, Capacity)");
+                Console.WriteLine("2. Xem danh sách lớp học");
+                Console.WriteLine("3. Xóa lớp học");
+                Console.WriteLine("4. Cập nhật thông tin lớp học");
+                Console.WriteLine("5. Phân công huấn luyện viên cho lớp học (assignTrainer)");
+                Console.WriteLine("0. Quay lại menu chính");
+                Console.Write("Vui lòng chọn chức năng (0-5): ");
+
+                string? choice = Console.ReadLine();
+                switch (choice)
+                {
+                    case "1":
+                        Console.WriteLine("Nhập thông tin lớp học mới:");
+                        Console.Write("ID: ");
+                        string? classId = Console.ReadLine();
+                        string? className;
+                        while (true)
+                        {
+                            Console.Write("Tên lớp học (ví dụ: Yoga Class, Zumba Class): ");
+                            className = Console.ReadLine();
+                            if (!string.IsNullOrWhiteSpace(className) && className.EndsWith("Class"))
+                            {
+                                break;
+                            }
+                            Console.WriteLine("[Lỗi] Tên lớp học phải kết thúc bằng 'Class'. Vui lòng nhập lại.");
+                        }
+                        DateTime scheduleTime;
+                        Console.Write("Thời gian (yyyy-MM-dd HH:mm): ");
+                        string? scheduleTimeText = Console.ReadLine();
+                        if (DateTime.TryParse(scheduleTimeText, out scheduleTime))
+                        {
+                            break;
+                        }
+                        Console.WriteLine("[Lỗi] Định dạng thời gian không hợp lệ. Vui lòng nhập lại.");
+                        Console.Write("Sức chứa: ");
+                        string? capacityText = Console.ReadLine();
+                        int capacityToAdd = int.TryParse(capacityText, out int capacity) ? capacity : 0;
+                        if (capacityToAdd <= 0)
+                        {
+                            Console.WriteLine("[Lỗi] Sức chứa phải là số nguyên dương. Vui lòng nhập lại.");
+                            break;
+                        }
+                        Console.Write("ID huấn luyện viên để phân công cho lớp học: ");
+                        string? trainerId = Console.ReadLine();
+                        var trainer = Trainers.FirstOrDefault(t => t.Id == trainerId);
+                        if (trainer == null || trainer.Specialization != className.Split(' ')[0]) // Kiểm tra chuyên môn
+                        {
+                            Console.WriteLine("[Lỗi] Không tìm thấy huấn luyện viên với ID đã nhập hoặc chuyên môn không phù hợp. Vui lòng tạo huấn luyện viên trước khi phân công.");
+                            break;
+                        }
+
+                        FitnessClasses.Add(new FitnessClass(classId, className, scheduleTime, capacityToAdd, trainer));
+                        Console.WriteLine($"[Hệ thống] Lớp học {className} đã được tạo thành công.");
+                        break;
+                    case "2":
+                        Console.WriteLine("\n--- DANH SÁCH LỚP HỌC ---");
+                        foreach (var fc in FitnessClasses)
+                        {
+                            Console.WriteLine($"ID: {fc.ClassId}, Tên: {fc.ClassName}, Thời gian: {fc.ScheduleTime}, Sức chứa: {fc.Capacity}, Huấn luyện viên: {(fc.Trainer != null ? fc.Trainer.Name : "Chưa phân công")}");
+                        }
+                        break;
+                    case "3":
+                        Console.Write("Nhập ID lớp học cần xóa: ");
+                        string? classIdToDelete = Console.ReadLine();
+                        var classToDelete = FitnessClasses.FirstOrDefault(fc => fc.ClassId == classIdToDelete);
+                        if (classToDelete != null)
+                        {
+                            FitnessClasses.Remove(classToDelete);
+                            Console.WriteLine($"[Hệ thống] Lớp học {classToDelete.ClassName} đã được xóa.");
+                        }
+                        else
+                        {
+                            Console.WriteLine("[Lỗi] Không tìm thấy lớp học với ID đã nhập.");
+                        }
+                        break;
+                    case "4":
+                        Console.Write("Nhập ID lớp học cần cập nhật: ");
+                        string? classIdToUpdate = Console.ReadLine();
+                        var classToUpdate = FitnessClasses.FirstOrDefault(fc => fc.ClassId == classIdToUpdate);
+                        if (classToUpdate == null)
+                        {
+                            Console.WriteLine("[Lỗi] Không tìm thấy lớp học với ID đã nhập.");
+                            break;
+                        }
+
+                        Console.WriteLine("\n--- CẬP NHẬT THÔNG TIN LỚP HỌC ---");
+                        Console.WriteLine("1. Cập nhật thời gian");
+                        Console.WriteLine("2. Cập nhật sức chứa");
+                        Console.WriteLine("3. Cập nhật huấn luyện viên");
+                        string? classChoiceToUpdate = Console.ReadLine();
+
+                        switch (classChoiceToUpdate)
+                        {
+                            case "1":
+                                while (true)
+                                {
+                                    Console.Write("Nhập thời gian mới (yyyy-MM-dd HH:mm): ");
+                                    string? newScheduleTimeText = Console.ReadLine();
+                                    if (DateTime.TryParse(newScheduleTimeText, out DateTime newScheduleTime))
+                                    {
+                                        classToUpdate.ScheduleTime = newScheduleTime;
+                                        Console.WriteLine("[Hệ thống] Thời gian lớp học đã được cập nhật.");
+                                        break;
+                                    }
+                                    Console.WriteLine("[Lỗi] Định dạng thời gian không hợp lệ. Vui lòng nhập lại.");
+                                }
+                                break;
+                            case "2":
+                                while (true)
+                                {
+                                    Console.Write("Nhập sức chứa mới: ");
+                                    string? newCapacityText = Console.ReadLine();
+                                    if (int.TryParse(newCapacityText, out int newCapacity) && newCapacity > 0)
+                                    {
+                                        classToUpdate.Capacity = newCapacity;
+                                        Console.WriteLine("[Hệ thống] Sức chứa lớp học đã được cập nhật.");
+                                        break;
+                                    }
+                                    Console.Write("[Lỗi] Sức chứa phải là số nguyên dương. Vui lòng nhập lại: ");
+                                }
+                                break;
+                            case "3":
+                                Console.Write("Nhập ID huấn luyện viên mới: ");
+                                string? newTrainerId = Console.ReadLine();
+                                var newTrainer = Trainers.FirstOrDefault(t => t.Id == newTrainerId);
+                                if (newTrainer == null)
+                                {
+                                    Console.WriteLine("[Lỗi] Không tìm thấy huấn luyện viên với ID đã nhập.");
+                                    break;
+                                }
+                                classToUpdate.Trainer = newTrainer;
+                                Console.WriteLine($"[Hệ thống] Huấn luyện viên của lớp học {classToUpdate.ClassName} đã được cập nhật.");
+                                break;
+                            default:
+                                Console.WriteLine("[Lỗi] Lựa chọn không hợp lệ.");
+                                break;
+                        }
+                        break;
+                    case "5":
+                        Console.Write("Nhập ID huấn luyện viên cần phân công lớp học: ");
+                        string? trainerIdForClass = Console.ReadLine();
+                        var trainerForClass = Trainers.FirstOrDefault(t => t.Id == trainerIdForClass);
+                        if (trainerForClass == null)
+                        {
+                            Console.WriteLine("[Lỗi] Không tìm thấy huấn luyện viên với ID đã nhập.");
+                            break;
+                        }
+
+                        Console.Write("Nhập ID lớp học cần phân công: ");
+                        string? classIdForAssignment = Console.ReadLine();
+                        var fitnessClass = FitnessClasses.FirstOrDefault(fc => fc.ClassId == classIdForAssignment);
+                        if (fitnessClass == null)
+                        {
+                            Console.WriteLine("[Lỗi] Không tìm thấy lớp học với ID đã nhập.");
+                            break;
+                        }
+
+                        trainerForClass.AssignClass(fitnessClass);
+                        Console.WriteLine($"[Hệ thống] Huấn luyện viên {trainerForClass.Name} đã được phân công lớp học {fitnessClass.ClassName}.");
+                        break;
+                    case "0":
+                        return;
+                    default:
+                        Console.WriteLine("\n[Lỗi] Lựa chọn không hợp lệ. Vui lòng nhập số từ 0 đến 5.");
+                        break;
+                }
+            }
         }
 
         public void ManageBookings()

@@ -14,8 +14,8 @@ namespace OOP_project
             report.AppendLine("========================================");
             report.AppendLine("        MEMBER ACTIVITY REPORT          ");
             report.AppendLine("========================================");
-            report.AppendLine($"Member ID   : {member.GetId()}"); 
-            report.AppendLine($"Member Name : {member.GetName()}");
+            report.AppendLine($"Member ID   : {member.Id}"); 
+            report.AppendLine($"Member Name : {member.Name}");
             
             var plan = member.GetCurrentPlan(); 
             if (plan != null)

@@ -2,15 +2,15 @@ namespace OOP_project
 {
     public class FitnessClass
     {
-        public string ClassId { get;set; }
-        public string ClassName { get;set; }
+        public string? ClassId { get;set; }
+        public string? ClassName { get;set; }
         public DateTime ScheduleTime { get;set; }
         public int Capacity { get;set; } // số lượng tối đa thành viên có thể tham gia lớp học
         public Trainer Trainer { get;set; }
         public List<Booking> Roster { get;set; } // danh sách các booking đã được xác nhận
         public Queue<Booking> WaitList { get;set; } // danh sách các booking đang chờ 
 
-        public FitnessClass(string classId, string className, DateTime scheduleTime, int capacity, Trainer trainer)
+        public FitnessClass(string? classId, string? className, DateTime scheduleTime, int capacity, Trainer trainer)
         {
             ClassId = classId;
             ClassName = className;

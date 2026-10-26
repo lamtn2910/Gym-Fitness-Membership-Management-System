@@ -2,111 +2,165 @@ namespace OOP_project
 {
     public class FitnessClass
     {
-        public string? ClassId { get;set; }
-        public string? ClassName { get;set; }
-        public DateTime ScheduleTime { get;set; }
-        public int Capacity { get;set; } // số lượng tối đa thành viên có thể tham gia lớp học
-        public Trainer Trainer { get;set; }
-        public List<Booking> Roster { get;set; } // danh sách các booking đã được xác nhận
-        public Queue<Booking> WaitList { get;set; } // danh sách các booking đang chờ 
+        private static int _nextId = 1;
 
-        public FitnessClass(string? classId, string? className, DateTime scheduleTime, int capacity, Trainer trainer)
+        public string ClassId { get; init; }
+
+        private string _className = string.Empty;
+        public string ClassName
         {
-            ClassId = classId;
+            get => _className;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    throw new ArgumentException("Tên lớp học không được để trống.", nameof(value));
+                _className = value.Trim();
+            }
+        }
+
+        public DateTime ScheduleTime { get; set; }
+
+        private int _capacity;
+        public int Capacity
+        {
+            get => _capacity;
+            set
+            {
+                if (value <= 0)
+                    throw new ArgumentException("Sức chứa phải lớn hơn 0.", nameof(value));
+                _capacity = value;
+            }
+        }
+
+        public Trainer Trainer { get; set; }
+
+        private readonly List<Booking> _roster = [];
+        private readonly Queue<Booking> _waitList = [];
+
+        // Đóng gói danh sách (chỉ đọc từ bên ngoài, thay đổi qua phương thức của FitnessClass)
+        public IReadOnlyList<Booking> Roster => _roster.AsReadOnly();
+        public IReadOnlyCollection<Booking> WaitList => _waitList;
+
+        // Constructor tự động sinh ID dựa trên biến static
+        public FitnessClass(string className, DateTime scheduleTime, int capacity, Trainer trainer)
+        {
+            ClassId = GenerateNextId();
             ClassName = className;
             ScheduleTime = scheduleTime;
             Capacity = capacity;
-            Trainer = trainer;
-            // 2. Khởi tạo rỗng cho các danh sách (List và Queue) để không bị Null
-            Roster = new List<Booking>();
-            WaitList = new Queue<Booking>();
+            Trainer = trainer ?? throw new ArgumentNullException(nameof(trainer));
         }
+
+        // Constructor truyền ID tùy chọn (dùng cho nạp dữ liệu cũ)
+        public FitnessClass(string classId, string className, DateTime scheduleTime, int capacity, Trainer trainer)
+        {
+            if (string.IsNullOrWhiteSpace(classId))
+                throw new ArgumentException("Class ID không được để trống.", nameof(classId));
+
+            ClassId = classId.Trim();
+            ClassName = className;
+            ScheduleTime = scheduleTime;
+            Capacity = capacity;
+            Trainer = trainer ?? throw new ArgumentNullException(nameof(trainer));
+            SynchronizeStaticId(classId);
+        }
+
+        private static string GenerateNextId() => $"C{_nextId++:D3}";
+
+        private static void SynchronizeStaticId(string id)
+        {
+            if (id.StartsWith("C", StringComparison.OrdinalIgnoreCase) &&
+                int.TryParse(id[1..], out int num) && num >= _nextId)
+            {
+                _nextId = num + 1;
+            }
+        }
+
         public Booking BookClass(Member member)
         {
-            // Tạo ID ngẫu nhiên cho Booking (hoặc bạn có thể tự thiết kế cách tạo ID riêng)
-            string bookingId = Guid.NewGuid().ToString().Substring(0, 8); 
+            ArgumentNullException.ThrowIfNull(member, nameof(member));
 
-            // Nếu danh sách chính (Roster) chưa đầy -> trạng thái CONFIRMED
-            // Nếu đã đầy -> trạng thái WAITLISTED (đưa vào hàng đợi)
-            BookingStatus status = Roster.Count < Capacity ? BookingStatus.ConFirmed : BookingStatus.WaitListed;
-            
-            Booking newBooking = new Booking(bookingId, member, this, DateTime.Now, status);
+            BookingStatus status = _roster.Count < Capacity ? BookingStatus.Confirmed : BookingStatus.WaitListed;
+            var booking = new Booking(member, this, DateTime.Now, status);
 
-            if (status == BookingStatus.ConFirmed)
+            if (status == BookingStatus.Confirmed)
             {
-                Roster.Add(newBooking);
+                _roster.Add(booking);
+                member.IncrementBookingCount();
             }
             else
             {
-                WaitList.Enqueue(newBooking);
+                _waitList.Enqueue(booking);
             }
 
-            return newBooking;
+            return booking;
         }
-        public void CancleBooking (string bookingid)
-        {
-            // Tìm booking trong danh sách chính (Roster)
-            Booking bookingToCancel = Roster.FirstOrDefault(b => b.BookingId == bookingid);
 
+        public bool CancelBooking(string bookingId)
+        {
+            if (string.IsNullOrWhiteSpace(bookingId)) return false;
+
+            // Tìm trong danh sách chính
+            Booking? bookingToCancel = _roster.FirstOrDefault(b => b.BookingId == bookingId);
             if (bookingToCancel != null)
             {
                 bookingToCancel.UpdateStatus(BookingStatus.Cancelled);
-                Roster.Remove(bookingToCancel);
+                _roster.Remove(bookingToCancel);
+                bookingToCancel.Member.DecrementBookingCount();
 
-                // Vì có người vừa hủy chỗ trống, tự động đưa người từ Waitlist lên
-                PromoteFromWaitlist(); 
+                // Tự động đôn người từ hàng đợi nếu còn chỗ
+                PromoteFromWaitlist();
+                return true;
             }
-            else
+
+            // Nếu không có trong Roster, tìm trong WaitList
+            var waitListAsList = _waitList.ToList();
+            Booking? waitlistBooking = waitListAsList.FirstOrDefault(b => b.BookingId == bookingId);
+            if (waitlistBooking != null)
             {
-                // Nếu không có trong Roster, tìm trong Waitlist
-                // (Xử lý hàng đợi Queue hơi đặc thù, ta phải chuyển sang List tạm thời để xóa)
-                var waitlistAsList = WaitList.ToList();
-                Booking waitlistBooking = waitlistAsList.FirstOrDefault(b => b.BookingId == bookingid);
-                
-                if (waitlistBooking != null)
+                waitlistBooking.UpdateStatus(BookingStatus.Cancelled);
+                waitListAsList.Remove(waitlistBooking);
+                _waitList.Clear();
+                foreach (var b in waitListAsList)
                 {
-                    waitlistBooking.UpdateStatus(BookingStatus.Cancelled);
-                    waitlistAsList.Remove(waitlistBooking);
-                    WaitList = new Queue<Booking>(waitlistAsList); // Cập nhật lại Queue
+                    _waitList.Enqueue(b);
                 }
+                return true;
             }
-        }
-        private void PromoteFromWaitlist ()
-        {
-            // Nếu có người trong danh sách chờ VÀ lớp vẫn còn chỗ trống
-            if (WaitList.Count > 0 && Roster.Count < Capacity)
-            {
-                // Lấy người đứng đầu hàng đợi ra (Dequeue)
-                Booking promotedBooking = WaitList.Dequeue();
-                
-                // Cập nhật trạng thái thành CONFIRMED và thêm vào Roster
-                promotedBooking.UpdateStatus(BookingStatus.ConFirmed);
-                Roster.Add(promotedBooking);
-            }
-        }
-        public void MarkAttendance (string memberid)
-        {
-            // Duyệt qua từng lượt đặt chỗ (booking) trong danh sách lớp (Roster)
-            foreach (Booking booking in Roster)
-            {
-            // 1. Lấy ra thành viên của lượt đặt chỗ này
-            Member currentMember = booking.GetMember();
 
-                // 2. So sánh ID. 
-            if (currentMember.Id == memberid) 
+            return false;
+        }
+
+        // Tương thích ngược với tên method cũ bị sai chính tả
+        public void CancleBooking(string bookingId) => CancelBooking(bookingId);
+
+        public bool PromoteFromWaitlist()
+        {
+            if (_waitList.Count > 0 && _roster.Count < Capacity)
             {
-                // 3. Nếu khớp ID thì đánh dấu là đã tham gia
+                Booking promoted = _waitList.Dequeue();
+                promoted.UpdateStatus(BookingStatus.Confirmed);
+                _roster.Add(promoted);
+                promoted.Member.IncrementBookingCount();
+                return true;
+            }
+            return false;
+        }
+
+        public bool MarkAttendance(string memberId)
+        {
+            var booking = _roster.FirstOrDefault(b => b.Member.Id == memberId);
+            if (booking != null)
+            {
                 booking.MarkAttended();
-
-                // Tìm thấy rồi thì dừng vòng lặp (không cần tìm người tiếp theo nữa)
-                break; 
+                return true;
             }
-    }
+            return false;
         }
-        public List<Member> GetConfirmedAttendees ()
+
+        public List<Member> GetConfirmedAttendees()
         {
-            // Lấy danh sách Member từ các Booking trong Roster
-            return Roster.Select(booking => booking.GetMember()).ToList();
+            return _roster.Select(b => b.Member).ToList();
         }
     }
 }

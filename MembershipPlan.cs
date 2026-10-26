@@ -2,10 +2,18 @@ namespace OOP_project
 {
     public abstract class MembershipPlan
     {
-        public abstract string GetPlanName();// lấy tên gói
-        public abstract double GetMonthlyFee();// lấy phí hàng tháng
-        public abstract int GetMaxBookingsPerMonth();// lấy số lượng đặt chỗ tối đa mỗi tháng
-        public abstract bool CanBookClass(int currentBookingCount);// có thể đặt lớp học ?
+        public abstract string PlanName { get; }
+        public abstract decimal MonthlyFee { get; }
+        public abstract int MaxBookingsPerMonth { get; }
 
+        public virtual bool CanBookClass(int currentBookingCount)
+        {
+            return currentBookingCount < MaxBookingsPerMonth;
+        }
+
+        // Các phương thức giữ lại để tương thích với sơ đồ UML
+        public string GetPlanName() => PlanName;
+        public double GetMonthlyFee() => (double)MonthlyFee;
+        public int GetMaxBookingsPerMonth() => MaxBookingsPerMonth;
     }
 }

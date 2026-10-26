@@ -15,17 +15,17 @@ namespace OOP_project
                 Console.WriteLine("\n===========================================");
                 Console.WriteLine("        BẢNG ĐIỀU KHIỂN QUẢN TRỊ VIÊN      ");
                 Console.WriteLine("===========================================");
-                Console.WriteLine("1. Quản lý Hội viên (Member)");
-                Console.WriteLine("2. Quản lý Huấn luyện viên (Trainer)");
-                Console.WriteLine("3. Quản lý Lớp học (Fitness Class)");
-                Console.WriteLine("4. Quản lý Đặt lịch & Hàng đợi (Booking/Waitlist)");
-                Console.WriteLine("5. Điểm danh lớp học (Attendance)");
-                Console.WriteLine("6. Xuất báo cáo hoạt động (Report)");
+                Console.WriteLine("1. Quản lý Hội viên ");
+                Console.WriteLine("2. Quản lý Huấn luyện viên ");
+                Console.WriteLine("3. Quản lý Lớp học ");
+                Console.WriteLine("4. Quản lý Đặt lịch & Hàng đợi ");
+                Console.WriteLine("5. Điểm danh lớp học ");
+                Console.WriteLine("6. Xuất báo cáo hoạt động ");
                 Console.WriteLine("0. Thoát chương trình");
                 Console.WriteLine("===========================================");
                 Console.Write("Vui lòng chọn chức năng (0-6): ");
 
-                string choice = Console.ReadLine();
+                string? choice = Console.ReadLine();
 
                 switch (choice)
                 {
@@ -62,7 +62,14 @@ namespace OOP_project
 
                     Console.WriteLine("\nNhấn phím Enter bất kỳ để tiếp tục...");
                     Console.ReadLine();
-                    Console.Clear(); // Xóa màn hình console cho gọn gàng (Tùy chọn)
+                    try
+                    {
+                        Console.Clear(); // Xóa màn hình console cho gọn gàng (an toàn khi không có TTY)
+                    }
+                    catch (IOException)
+                    {
+                        // Bỏ qua lỗi khi console bị chuyển hướng luồng I/O
+                    }
                 }
             }
         }

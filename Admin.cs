@@ -1,6 +1,6 @@
 namespace OOP_project
 {
-    public class Admin
+    public partial class Admin
     {
         private static Admin? _instance;
 
@@ -33,6 +33,9 @@ namespace OOP_project
                 new FitnessClass("Zumba Class", DateTime.Now.AddDays(2), 15, Trainers[1]),
                 new FitnessClass("Pilates Class", DateTime.Now.AddDays(3), 12, Trainers[2])
             ];
+
+            foreach (FitnessClass fitnessClass in FitnessClasses)
+                RegisterClass(fitnessClass);
 
             Console.WriteLine("[Hệ thống] Dữ liệu khởi tạo thành công với ID tự động sinh qua biến static.");
         }
@@ -171,8 +174,10 @@ namespace OOP_project
                         var memberToDelete = Members.FirstOrDefault(m => m.Id.Equals(deleteId, StringComparison.OrdinalIgnoreCase));
                         if (memberToDelete != null)
                         {
-                            Members.Remove(memberToDelete);
-                            Console.WriteLine($"[Hệ thống] Đã xóa hội viên {memberToDelete.Name} (ID: {memberToDelete.Id}).");
+                            if (TryDeleteMember(memberToDelete, out string deleteMemberError))
+                                Console.WriteLine($"[Hệ thống] Đã xóa hội viên {memberToDelete.Name} (ID: {memberToDelete.Id}) và hủy các booking liên quan.");
+                            else
+                                Console.WriteLine($"[Lỗi] {deleteMemberError}");
                         }
                         else
                         {
@@ -296,8 +301,10 @@ namespace OOP_project
                             break;
                         }
 
-                        assignClass.Trainer = assignTrainer;
-                        Console.WriteLine($"[Hệ thống] Đã phân công HLV {assignTrainer.Name} cho lớp {assignClass.ClassName}.");
+                        if (TryAssignTrainer(assignClass, assignTrainer, out string assignError))
+                            Console.WriteLine($"[Hệ thống] Đã phân công HLV {assignTrainer.Name} cho lớp {assignClass.ClassName}.");
+                        else
+                            Console.WriteLine($"[Lỗi] {assignError}");
                         break;
 
                     case "5":
@@ -306,8 +313,10 @@ namespace OOP_project
                         var toDel = Trainers.FirstOrDefault(t => t.Id.Equals(delId, StringComparison.OrdinalIgnoreCase));
                         if (toDel != null)
                         {
-                            Trainers.Remove(toDel);
-                            Console.WriteLine($"[Hệ thống] Huấn luyện viên {toDel.Name} đã được xóa.");
+                            if (TryDeleteTrainer(toDel, out string deleteTrainerError))
+                                Console.WriteLine($"[Hệ thống] Huấn luyện viên {toDel.Name} đã được xóa.");
+                            else
+                                Console.WriteLine($"[Lỗi] {deleteTrainerError}");
                         }
                         else
                         {
@@ -353,6 +362,7 @@ namespace OOP_project
                         Console.WriteLine("\nNhập thông tin lớp học mới:");
                         string className = ConsoleHelper.ReadNonEmptyString("Tên lớp học (ví dụ: Yoga Class, Zumba Class): ");
                         DateTime schedule = ConsoleHelper.ReadDateTime("Thời gian diễn ra (yyyy-MM-dd HH:mm): ", futureOnly: true);
+                        int durationMinutes = ConsoleHelper.ReadInt("Thời lượng (phút, 1-1440; thường 60): ", 1, 1440);
                         int capacity = ConsoleHelper.ReadInt("Sức chứa tối đa của lớp: ", min: 1);
 
                         Console.WriteLine("\nChọn huấn luyện viên phụ trách:");
@@ -363,11 +373,11 @@ namespace OOP_project
                         int trainerIndex = ConsoleHelper.ReadInt("Chọn số thứ tự HLV: ", 1, Trainers.Count) - 1;
                         Trainer selectedTrainer = Trainers[trainerIndex];
 
-                        // Constructor tự sinh ID dựa vào biến static
-                        var newClass = new FitnessClass(className, schedule, capacity, selectedTrainer);
-                        FitnessClasses.Add(newClass);
-
-                        Console.WriteLine($"\n[Hệ thống] Tạo lớp thành công: {newClass.ClassName} | Mã số tự sinh: {newClass.ClassId} | Sức chứa: {newClass.Capacity} | HLV: {newClass.Trainer.Name}");
+                        if (TryCreateClass(className, schedule, durationMinutes, capacity,
+                            selectedTrainer, out FitnessClass? newClass, out string createError))
+                            Console.WriteLine($"\n[Hệ thống] Tạo lớp thành công: {newClass!.ClassName} | Mã: {newClass.ClassId} | Thời lượng: {newClass.DurationMinutes} phút | HLV: {newClass.Trainer.Name}");
+                        else
+                            Console.WriteLine($"[Lỗi] Không thể tạo lớp: {createError}");
                         break;
 
                     case "2":
@@ -379,7 +389,7 @@ namespace OOP_project
                         }
                         foreach (var fc in FitnessClasses)
                         {
-                            Console.WriteLine($"ID: {fc.ClassId,-5} | Lớp: {fc.ClassName,-16} | Thời gian: {fc.ScheduleTime:dd/MM/yyyy HH:mm} | Chỗ: {fc.Roster.Count}/{fc.Capacity} | Chờ: {fc.WaitList.Count} | HLV: {fc.Trainer.Name}");
+                            Console.WriteLine($"ID: {fc.ClassId,-5} | Lớp: {fc.ClassName,-16} | Bắt đầu: {fc.ScheduleTime:dd/MM/yyyy HH:mm} | Kết thúc: {fc.EndTime:dd/MM/yyyy HH:mm} | Chỗ: {fc.Roster.Count}/{fc.Capacity} | Chờ: {fc.WaitList.Count} | HLV: {fc.Trainer.Name}");
                         }
                         break;
 
@@ -397,7 +407,8 @@ namespace OOP_project
                         Console.WriteLine("1. Cập nhật tên lớp");
                         Console.WriteLine("2. Cập nhật thời gian");
                         Console.WriteLine("3. Cập nhật sức chứa");
-                        Console.Write("Chọn (1-3): ");
+                        Console.WriteLine("4. Cập nhật thời lượng");
+                        Console.Write("Chọn (1-4): ");
                         string? updateOption = Console.ReadLine()?.Trim();
 
                         switch (updateOption)
@@ -407,17 +418,29 @@ namespace OOP_project
                                 Console.WriteLine("[Hệ thống] Đã cập nhật tên lớp.");
                                 break;
                             case "2":
-                                classToUpdate.ScheduleTime = ConsoleHelper.ReadDateTime("Thời gian mới (yyyy-MM-dd HH:mm): ", futureOnly: true);
-                                Console.WriteLine("[Hệ thống] Đã cập nhật thời gian lớp học.");
+                                DateTime newStart = ConsoleHelper.ReadDateTime("Thời gian mới (yyyy-MM-dd HH:mm): ", futureOnly: true);
+                                if (TryUpdateClassSchedule(classToUpdate, newStart, classToUpdate.DurationMinutes, out string scheduleError))
+                                    Console.WriteLine("[Hệ thống] Đã cập nhật thời gian lớp học.");
+                                else
+                                    Console.WriteLine($"[Lỗi] {scheduleError}");
                                 break;
                             case "3":
                                 int newCap = ConsoleHelper.ReadInt("Sức chứa mới: ", min: 1);
                                 if (newCap < classToUpdate.Roster.Count)
                                 {
-                                    Console.WriteLine($"[Cảnh báo] Sức chứa mới ({newCap}) nhỏ hơn số hội viên đang có ({classToUpdate.Roster.Count}).");
+                                    Console.WriteLine($"[Lỗi] Sức chứa mới ({newCap}) nhỏ hơn số hội viên đang có ({classToUpdate.Roster.Count}).");
+                                    break;
                                 }
                                 classToUpdate.Capacity = newCap;
+                                while (classToUpdate.Roster.Count < classToUpdate.Capacity && classToUpdate.PromoteFromWaitlist()) { }
                                 Console.WriteLine("[Hệ thống] Đã cập nhật sức chứa lớp học.");
+                                break;
+                            case "4":
+                                int newDuration = ConsoleHelper.ReadInt("Thời lượng mới (phút): ", 1, 1440);
+                                if (TryUpdateClassSchedule(classToUpdate, classToUpdate.ScheduleTime, newDuration, out string durationError))
+                                    Console.WriteLine("[Hệ thống] Đã cập nhật thời lượng lớp học.");
+                                else
+                                    Console.WriteLine($"[Lỗi] {durationError}");
                                 break;
                             default:
                                 Console.WriteLine("[Lỗi] Lựa chọn không hợp lệ.");
@@ -444,8 +467,10 @@ namespace OOP_project
                             break;
                         }
 
-                        fcAssign.Trainer = newTr;
-                        Console.WriteLine($"[Hệ thống] Huấn luyện viên của lớp {fcAssign.ClassName} đã được cập nhật thành {newTr.Name}.");
+                        if (TryAssignTrainer(fcAssign, newTr, out string reassignError))
+                            Console.WriteLine($"[Hệ thống] Huấn luyện viên của lớp {fcAssign.ClassName} đã được cập nhật thành {newTr.Name}.");
+                        else
+                            Console.WriteLine($"[Lỗi] {reassignError}");
                         break;
 
                     case "5":
@@ -454,8 +479,10 @@ namespace OOP_project
                         var toDelClass = FitnessClasses.FirstOrDefault(fc => fc.ClassId.Equals(delClassId, StringComparison.OrdinalIgnoreCase));
                         if (toDelClass != null)
                         {
-                            FitnessClasses.Remove(toDelClass);
-                            Console.WriteLine($"[Hệ thống] Lớp học {toDelClass.ClassName} đã được xóa.");
+                            if (TryDeleteClass(toDelClass, out string deleteClassError))
+                                Console.WriteLine($"[Hệ thống] Lớp học {toDelClass.ClassName} đã được xóa và các booking chưa điểm danh đã hủy.");
+                            else
+                                Console.WriteLine($"[Lỗi] {deleteClassError}");
                         }
                         else
                         {
@@ -515,34 +542,14 @@ namespace OOP_project
                             break;
                         }
 
-                        if (fitnessClass.ScheduleTime <= DateTime.Now)
+                        if (!TryBookClass(member, fitnessClass, out Booking? newBooking, out string bookingError))
                         {
-                            Console.WriteLine("[Lỗi] Lớp học đã diễn ra hoặc đã kết thúc.");
+                            Console.WriteLine($"[Lỗi] {bookingError}");
                             break;
                         }
-
-                        // Kiểm tra đã đăng ký lớp này chưa
-                        bool alreadyBooked = fitnessClass.Roster.Any(b => b.Member.Id.Equals(member.Id, StringComparison.OrdinalIgnoreCase)) ||
-                                             fitnessClass.WaitList.Any(b => b.Member.Id.Equals(member.Id, StringComparison.OrdinalIgnoreCase));
-                        if (alreadyBooked)
-                        {
-                            Console.WriteLine("[Lỗi] Hội viên đã có tên trong danh sách lớp hoặc hàng đợi này.");
-                            break;
-                        }
-
-                        // Kiểm tra giới hạn gói tập
-                        if (!member.CanBookMore())
-                        {
-                            Console.WriteLine($"[Lỗi] Hội viên đã đạt giới hạn {member.CurrentPlan.MaxBookingsPerMonth} lượt đặt của gói {member.CurrentPlan.PlanName}.");
-                            break;
-                        }
-
-                        // Đặt lớp qua phương thức nghiệp vụ của FitnessClass
-                        Booking newBooking = fitnessClass.BookClass(member);
-                        _bookingHistory.Add(newBooking);
 
                         Console.WriteLine("\n[Hệ thống] Đặt lớp thành công!");
-                        Console.WriteLine($"Mã đặt chỗ : {newBooking.BookingId}");
+                        Console.WriteLine($"Mã đặt chỗ : {newBooking!.BookingId}");
                         Console.WriteLine($"Hội viên   : {member.Name}");
                         Console.WriteLine($"Lớp học    : {fitnessClass.ClassName}");
                         Console.WriteLine($"Trạng thái : {newBooking.Status}");
@@ -625,7 +632,7 @@ namespace OOP_project
                         foreach (var fc in FitnessClasses)
                         {
                             Console.WriteLine($"\n==================================================");
-                            Console.WriteLine($"Lớp: {fc.ClassName} (ID: {fc.ClassId}) | Thời gian: {fc.ScheduleTime:dd/MM/yyyy HH:mm}");
+                            Console.WriteLine($"Lớp: {fc.ClassName} (ID: {fc.ClassId}) | Thời gian: {fc.ScheduleTime:dd/MM/yyyy HH:mm} - {fc.EndTime:dd/MM/yyyy HH:mm}");
                             Console.WriteLine($"Sức chứa: {fc.Roster.Count}/{fc.Capacity} | Chờ: {fc.WaitList.Count}");
                             Console.WriteLine("--------------------------------------------------");
                             Console.WriteLine("Danh sách chính thức:");

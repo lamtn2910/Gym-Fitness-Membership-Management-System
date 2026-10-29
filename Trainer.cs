@@ -50,7 +50,8 @@ namespace OOP_project
         public void AssignClass(FitnessClass fitnessClass)
         {
             ArgumentNullException.ThrowIfNull(fitnessClass, nameof(fitnessClass));
-            fitnessClass.Trainer = this;
+            if (!Admin.GetInstance().TryAssignTrainer(fitnessClass, this, out string error))
+                throw new InvalidOperationException(error);
         }
     }
 }

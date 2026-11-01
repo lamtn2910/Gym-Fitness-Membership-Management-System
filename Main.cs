@@ -25,7 +25,7 @@ namespace OOP_project
                 Console.WriteLine("===========================================");
                 Console.Write("Vui lòng chọn chức năng (0-6): ");
 
-                string? choice = Console.ReadLine();
+                string? choice = Console.ReadLine()?.Trim();
 
                 switch (choice)
                 {
@@ -49,7 +49,8 @@ namespace OOP_project
                         break;
                     case "0":
                         isRunning = false;
-                        Console.WriteLine("\n[Hệ thống] Đang lưu dữ liệu... Tạm biệt!");
+                        sysAdmin.SaveData();
+                        Console.WriteLine("\n[Hệ thống] Đã lưu dữ liệu vào thư mục 'data'. Tạm biệt!");
                         break;
                     default:
                         Console.WriteLine("\n[Lỗi] Lựa chọn không hợp lệ. Vui lòng nhập số từ 0 đến 6.");
@@ -59,7 +60,6 @@ namespace OOP_project
                 // Tạm dừng màn hình để người dùng đọc thông báo trước khi menu lặp lại
                 if (isRunning)
                 {
-
                     Console.WriteLine("\nNhấn phím Enter bất kỳ để tiếp tục...");
                     Console.ReadLine();
                     try

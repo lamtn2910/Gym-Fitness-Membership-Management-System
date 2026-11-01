@@ -229,5 +229,21 @@ namespace OOP_project
         {
             return _roster.Select(b => b.Member).ToList();
         }
+
+        // Khôi phục lại booking từ dữ liệu JSON đã lưu
+        internal void RestoreBooking(Booking booking)
+        {
+            ArgumentNullException.ThrowIfNull(booking, nameof(booking));
+
+            if (booking.Status is BookingStatus.Confirmed or BookingStatus.Attended)
+            {
+                _roster.Add(booking);
+                booking.Member.IncrementBookingCount();
+            }
+            else if (booking.Status == BookingStatus.WaitListed)
+            {
+                _waitList.Enqueue(booking);
+            }
+        }
     }
 }

@@ -241,7 +241,7 @@ namespace OOP_project
         // Từ chối xóa nếu hội viên không tồn tại hoặc đã có lịch sử điểm danh.  
         // Khi xóa, loại hội viên khỏi danh sách trước, sau đó hủy các booking  
         // trong tất cả lớp để giải phóng chỗ và xử lý waitlist phù hợp;  
-        // tránh việc chính hội viên đang bị xóa lại được đôn từ hàng chờ.  
+        // tránh việc chính hội viên đang bị xóa lại được đôn từ hàng chờ. 
         public bool TryDeleteMember(Member member, out string error)
         {
             if (member == null || !Members.Contains(member))

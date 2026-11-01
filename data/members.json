@@ -1,0 +1,29 @@
+[
+  {
+    "Id": "M001",
+    "Name": "Nguyen Van A",
+    "Email": "nguyenvana@example.com",
+    "PhoneNumber": "0901234567",
+    "PlanType": "Basic Plan",
+    "JoinDate": "2026-11-01T08:00:00",
+    "PlanExpiryDate": "2026-12-01T08:00:00"
+  },
+  {
+    "Id": "M002",
+    "Name": "Tran Thi B",
+    "Email": "tranthib@example.com",
+    "PhoneNumber": "0901234568",
+    "PlanType": "Basic Plan",
+    "JoinDate": "2026-11-01T08:00:00",
+    "PlanExpiryDate": "2026-12-01T08:00:00"
+  },
+  {
+    "Id": "M003",
+    "Name": "Le Van C",
+    "Email": "levanc@example.com",
+    "PhoneNumber": "0901234569",
+    "PlanType": "Premium Plan",
+    "JoinDate": "2026-11-01T08:00:00",
+    "PlanExpiryDate": "2026-12-01T08:00:00"
+  }
+]

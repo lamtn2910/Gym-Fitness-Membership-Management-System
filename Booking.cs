@@ -16,7 +16,24 @@ namespace OOP_project
             FitnessClass = fitnessClass ?? throw new ArgumentNullException(nameof(fitnessClass));
             BookingDate = bookingDate;
             Status = status;
-            BookingId = !string.IsNullOrWhiteSpace(bookingId) ? bookingId : $"BK{_nextId++:D4}";
+            if (!string.IsNullOrWhiteSpace(bookingId))
+            {
+                BookingId = bookingId.Trim();
+                SynchronizeStaticId(BookingId);
+            }
+            else
+            {
+                BookingId = $"BK{_nextId++:D4}";
+            }
+        }
+
+        private static void SynchronizeStaticId(string id)
+        {
+            if (id.StartsWith("BK", StringComparison.OrdinalIgnoreCase) &&
+                int.TryParse(id[2..], out int num) && num >= _nextId)
+            {
+                _nextId = num + 1;
+            }
         }
 
         public void UpdateStatus(BookingStatus newStatus)
@@ -29,7 +46,7 @@ namespace OOP_project
             Status = BookingStatus.Attended;
         }
 
-        // Giữ lại để tương thích với các phương thức UML
+        // Giữ lại để tương thích 
         public Member GetMember() => Member;
         public BookingStatus GetStatus() => Status;
     }

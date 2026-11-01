@@ -87,8 +87,7 @@ namespace OOP_project
             {
                 Console.Write(prompt);
                 string? input = Console.ReadLine()?.Trim();
-                if (DateTime.TryParseExact(input, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime result) ||
-                    DateTime.TryParse(input, out result))
+                if (DateTime.TryParseExact(input, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime result))
                 {
                     if (futureOnly && result <= DateTime.Now)
                     {

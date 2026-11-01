@@ -1,0 +1,26 @@
+[
+  {
+    "ClassId": "C001",
+    "ClassName": "Yoga Class",
+    "ScheduleTime": "2026-11-05T18:00:00",
+    "DurationMinutes": 60,
+    "Capacity": 10,
+    "TrainerId": "T001"
+  },
+  {
+    "ClassId": "C002",
+    "ClassName": "Zumba Class",
+    "ScheduleTime": "2026-11-06T18:00:00",
+    "DurationMinutes": 60,
+    "Capacity": 15,
+    "TrainerId": "T002"
+  },
+  {
+    "ClassId": "C003",
+    "ClassName": "Pilates Class",
+    "ScheduleTime": "2026-11-07T18:00:00",
+    "DurationMinutes": 60,
+    "Capacity": 12,
+    "TrainerId": "T003"
+  }
+]

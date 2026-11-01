@@ -1,3 +1,7 @@
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace OOP_project
 {
     public partial class Admin
@@ -9,40 +13,158 @@ namespace OOP_project
         public List<FitnessClass> FitnessClasses { get; }
         private readonly List<Booking> _bookingHistory = [];
 
-        // Private constructor cho Singleton Pattern
+        // Các record DTO phẳng dùng để lưu/đọc 4 file JSON (ngăn lỗi vòng lặp tham chiếu & abstract class)
+        private record MemberDto(string Id, string Name, string Email, string PhoneNumber, string? PlanType, DateTime JoinDate, DateTime PlanExpiryDate);
+        private record TrainerDto(string Id, string Name, string Email, string PhoneNumber, string Specialization);
+        private record FitnessClassDto(string ClassId, string ClassName, DateTime ScheduleTime, int DurationMinutes, int Capacity, string TrainerId);
+        private record BookingDto(string BookingId, string MemberId, string ClassId, DateTime BookingDate, BookingStatus Status);
+
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            WriteIndented = true,
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            Converters = { new JsonStringEnumConverter() }
+        };
+
+        // Private constructor cho Singleton Pattern: Tự động load dữ liệu cũ từ folder "data"
         private Admin()
         {
-            // Khởi tạo danh sách mẫu bằng constructor tự sinh ID dựa trên biến static
-            Trainers =
-            [
-                new Trainer("Pham Van D", "phamvand@example.com", "0901234560", "Yoga"),
-                new Trainer("Hoang Thi E", "hoangthie@example.com", "0901234561", "Zumba"),
-                new Trainer("Nguyen Van F", "nguyenvanf@example.com", "0901234562", "Pilates")
-            ];
+            Members = [];
+            Trainers = [];
+            FitnessClasses = [];
 
-            Members =
-            [
-                new Member("Nguyen Van A", "nguyenvana@example.com", "0901234567", new BasicPlan()),
-                new Member("Tran Thi B", "tranthib@example.com", "0901234568", new BasicPlan()),
-                new Member("Le Van C", "levanc@example.com", "0901234569", new PremiumPlan())
-            ];
-
-            FitnessClasses =
-            [
-                new FitnessClass("Yoga Class", DateTime.Now.AddDays(1), 10, Trainers[0]),
-                new FitnessClass("Zumba Class", DateTime.Now.AddDays(2), 15, Trainers[1]),
-                new FitnessClass("Pilates Class", DateTime.Now.AddDays(3), 12, Trainers[2])
-            ];
-
-            foreach (FitnessClass fitnessClass in FitnessClasses)
-                RegisterClass(fitnessClass);
-
-            Console.WriteLine("[Hệ thống] Dữ liệu khởi tạo thành công với ID tự động sinh qua biến static.");
+            LoadData();
         }
 
         public static Admin GetInstance()
         {
             return _instance ??= new Admin();
+        }
+
+        // Xác định đường dẫn thư mục "data" trong thư mục gốc của project
+        private static string GetDataDirectory()
+        {
+            string current = Directory.GetCurrentDirectory();
+            if (File.Exists(Path.Combine(current, "OOP_project.csproj")))
+                return Path.Combine(current, "data");
+
+            DirectoryInfo? dir = new(AppContext.BaseDirectory);
+            while (dir != null)
+            {
+                if (File.Exists(Path.Combine(dir.FullName, "OOP_project.csproj")))
+                    return Path.Combine(dir.FullName, "data");
+                dir = dir.Parent;
+            }
+            return Path.Combine(current, "data");
+        }
+
+        // Đọc dữ liệu từ 4 file JSON trong folder "data"
+        public void LoadData()
+        {
+            string dataDir = GetDataDirectory();
+            Directory.CreateDirectory(dataDir);
+
+            string trainersPath = Path.Combine(dataDir, "trainers.json");
+            string membersPath = Path.Combine(dataDir, "members.json");
+            string classesPath = Path.Combine(dataDir, "fitnessClasses.json");
+            string bookingsPath = Path.Combine(dataDir, "bookings.json");
+
+            Members.Clear();
+            Trainers.Clear();
+            FitnessClasses.Clear();
+            _bookingHistory.Clear();
+
+            // 1. Nạp danh sách Huấn luyện viên (Trainers)
+            if (File.Exists(trainersPath))
+            {
+                var trainerDtos = JsonSerializer.Deserialize<List<TrainerDto>>(File.ReadAllText(trainersPath), JsonOptions) ?? [];
+                foreach (var dto in trainerDtos)
+                {
+                    Trainers.Add(new Trainer(dto.Id, dto.Name, dto.Email, dto.PhoneNumber, dto.Specialization));
+                }
+            }
+
+            // 2. Nạp danh sách Hội viên (Members)
+            if (File.Exists(membersPath))
+            {
+                var memberDtos = JsonSerializer.Deserialize<List<MemberDto>>(File.ReadAllText(membersPath), JsonOptions) ?? [];
+                foreach (var dto in memberDtos)
+                {
+                    MembershipPlan? plan = dto.PlanType switch
+                    {
+                        "Basic" or "Basic Plan" => new BasicPlan(),
+                        "Premium" or "Premium Plan" => new PremiumPlan(),
+                        _ => null
+                    };
+
+                    var member = new Member(dto.Id, dto.Name, dto.Email, dto.PhoneNumber, plan)
+                    {
+                        JoinDate = dto.JoinDate,
+                        PlanExpiryDate = dto.PlanExpiryDate
+                    };
+                    Members.Add(member);
+                }
+            }
+
+            // 3. Nạp danh sách Lớp học (FitnessClasses)
+            if (File.Exists(classesPath))
+            {
+                var classDtos = JsonSerializer.Deserialize<List<FitnessClassDto>>(File.ReadAllText(classesPath), JsonOptions) ?? [];
+                foreach (var dto in classDtos)
+                {
+                    var trainer = Trainers.FirstOrDefault(t => t.Id.Equals(dto.TrainerId, StringComparison.OrdinalIgnoreCase));
+                    if (trainer != null)
+                    {
+                        int duration = dto.DurationMinutes is > 0 and <= 1440 ? dto.DurationMinutes : 60;
+                        var fitnessClass = new FitnessClass(dto.ClassId, dto.ClassName, dto.ScheduleTime, dto.Capacity, trainer, duration);
+                        FitnessClasses.Add(fitnessClass);
+                        RegisterClass(fitnessClass);
+                    }
+                }
+            }
+
+            // 4. Nạp lịch sử Đặt chỗ (Bookings) và khôi phục Roster / WaitList
+            if (File.Exists(bookingsPath))
+            {
+                var bookingDtos = JsonSerializer.Deserialize<List<BookingDto>>(File.ReadAllText(bookingsPath), JsonOptions) ?? [];
+                foreach (var dto in bookingDtos)
+                {
+                    var member = Members.FirstOrDefault(m => m.Id.Equals(dto.MemberId, StringComparison.OrdinalIgnoreCase));
+                    var fitnessClass = FitnessClasses.FirstOrDefault(c => c.ClassId.Equals(dto.ClassId, StringComparison.OrdinalIgnoreCase));
+                    if (member != null && fitnessClass != null)
+                    {
+                        var booking = new Booking(member, fitnessClass, dto.BookingDate, dto.Status, dto.BookingId);
+                        _bookingHistory.Add(booking);
+                        fitnessClass.RestoreBooking(booking);
+                    }
+                }
+            }
+
+            Console.WriteLine($"[Hệ thống] Đã tải dữ liệu từ thư mục 'data' ({Members.Count} hội viên, {Trainers.Count} HLV, {FitnessClasses.Count} lớp học, {_bookingHistory.Count} lượt đặt chỗ).");
+        }
+
+        // Lưu toàn bộ 4 danh sách xuống 4 file JSON trong folder "data"
+        public void SaveData()
+        {
+            string dataDir = GetDataDirectory();
+            Directory.CreateDirectory(dataDir);
+
+            var trainerDtos = Trainers.Select(t => new TrainerDto(
+                t.Id, t.Name, t.Email, t.PhoneNumber, t.Specialization)).ToList();
+
+            var memberDtos = Members.Select(m => new MemberDto(
+                m.Id, m.Name, m.Email, m.PhoneNumber, m.CurrentPlan?.PlanName, m.JoinDate, m.PlanExpiryDate)).ToList();
+
+            var classDtos = FitnessClasses.Select(c => new FitnessClassDto(
+                c.ClassId, c.ClassName, c.ScheduleTime, c.DurationMinutes, c.Capacity, c.Trainer.Id)).ToList();
+
+            var bookingDtos = _bookingHistory.Select(b => new BookingDto(
+                b.BookingId, b.Member.Id, b.FitnessClass.ClassId, b.BookingDate, b.Status)).ToList();
+
+            File.WriteAllText(Path.Combine(dataDir, "trainers.json"), JsonSerializer.Serialize(trainerDtos, JsonOptions));
+            File.WriteAllText(Path.Combine(dataDir, "members.json"), JsonSerializer.Serialize(memberDtos, JsonOptions));
+            File.WriteAllText(Path.Combine(dataDir, "fitnessClasses.json"), JsonSerializer.Serialize(classDtos, JsonOptions));
+            File.WriteAllText(Path.Combine(dataDir, "bookings.json"), JsonSerializer.Serialize(bookingDtos, JsonOptions));
         }
 
         // ==========================================
@@ -75,6 +197,7 @@ namespace OOP_project
                         // Constructor tự sinh ID từ biến static
                         var newMember = new Member(name, email, phone, plan);
                         Members.Add(newMember);
+                        SaveData();
 
                         Console.WriteLine($"\n[Hệ thống] Tạo thành công hội viên: {newMember.Name} | Mã số tự sinh: {newMember.Id} | Gói: {newMember.CurrentPlan?.PlanName}");
                         break;
@@ -113,14 +236,17 @@ namespace OOP_project
                         {
                             case "1":
                                 memberToUpdate.Name = ConsoleHelper.ReadNonEmptyString("Tên mới: ");
+                                SaveData();
                                 Console.WriteLine("[Hệ thống] Cập nhật tên thành công.");
                                 break;
                             case "2":
                                 memberToUpdate.Email = ConsoleHelper.ReadEmail("Email mới: ");
+                                SaveData();
                                 Console.WriteLine("[Hệ thống] Cập nhật email thành công.");
                                 break;
                             case "3":
                                 memberToUpdate.PhoneNumber = ConsoleHelper.ReadPhoneNumber("Số điện thoại mới: ");
+                                SaveData();
                                 Console.WriteLine("[Hệ thống] Cập nhật số điện thoại thành công.");
                                 break;
                             default:
@@ -151,6 +277,7 @@ namespace OOP_project
                             else
                             {
                                 memberPlan.ChangePlan(new BasicPlan());
+                                SaveData();
                                 Console.WriteLine($"[Hệ thống] Đã chuyển đổi sang gói Basic Plan cho {memberPlan.Name}.");
                             }
                         }
@@ -163,6 +290,7 @@ namespace OOP_project
                             else
                             {
                                 memberPlan.ChangePlan(new PremiumPlan());
+                                SaveData();
                                 Console.WriteLine($"[Hệ thống] Đã nâng cấp lên gói Premium Plan cho {memberPlan.Name}.");
                             }
                         }
@@ -175,9 +303,14 @@ namespace OOP_project
                         if (memberToDelete != null)
                         {
                             if (TryDeleteMember(memberToDelete, out string deleteMemberError))
+                            {
+                                SaveData();
                                 Console.WriteLine($"[Hệ thống] Đã xóa hội viên {memberToDelete.Name} (ID: {memberToDelete.Id}) và hủy các booking liên quan.");
+                            }
                             else
+                            {
                                 Console.WriteLine($"[Lỗi] {deleteMemberError}");
+                            }
                         }
                         else
                         {
@@ -223,6 +356,7 @@ namespace OOP_project
                         // Constructor tự sinh ID dựa vào biến static
                         var newTrainer = new Trainer(name, email, phone, spec);
                         Trainers.Add(newTrainer);
+                        SaveData();
 
                         Console.WriteLine($"\n[Hệ thống] Thêm thành công HLV: {newTrainer.Name} | Mã số tự sinh: {newTrainer.Id} | Chuyên môn: {newTrainer.Specialization}");
                         break;
@@ -262,18 +396,22 @@ namespace OOP_project
                         {
                             case "1":
                                 trainer.Name = ConsoleHelper.ReadNonEmptyString("Tên mới: ");
+                                SaveData();
                                 Console.WriteLine("[Hệ thống] Cập nhật tên thành công.");
                                 break;
                             case "2":
                                 trainer.Email = ConsoleHelper.ReadEmail("Email mới: ");
+                                SaveData();
                                 Console.WriteLine("[Hệ thống] Cập nhật email thành công.");
                                 break;
                             case "3":
                                 trainer.PhoneNumber = ConsoleHelper.ReadPhoneNumber("Số điện thoại mới: ");
+                                SaveData();
                                 Console.WriteLine("[Hệ thống] Cập nhật số điện thoại thành công.");
                                 break;
                             case "4":
                                 trainer.Specialization = ConsoleHelper.ReadNonEmptyString("Chuyên môn mới: ");
+                                SaveData();
                                 Console.WriteLine("[Hệ thống] Cập nhật chuyên môn thành công.");
                                 break;
                             default:
@@ -302,9 +440,14 @@ namespace OOP_project
                         }
 
                         if (TryAssignTrainer(assignClass, assignTrainer, out string assignError))
+                        {
+                            SaveData();
                             Console.WriteLine($"[Hệ thống] Đã phân công HLV {assignTrainer.Name} cho lớp {assignClass.ClassName}.");
+                        }
                         else
+                        {
                             Console.WriteLine($"[Lỗi] {assignError}");
+                        }
                         break;
 
                     case "5":
@@ -314,9 +457,14 @@ namespace OOP_project
                         if (toDel != null)
                         {
                             if (TryDeleteTrainer(toDel, out string deleteTrainerError))
+                            {
+                                SaveData();
                                 Console.WriteLine($"[Hệ thống] Huấn luyện viên {toDel.Name} đã được xóa.");
+                            }
                             else
+                            {
                                 Console.WriteLine($"[Lỗi] {deleteTrainerError}");
+                            }
                         }
                         else
                         {
@@ -375,9 +523,14 @@ namespace OOP_project
 
                         if (TryCreateClass(className, schedule, durationMinutes, capacity,
                             selectedTrainer, out FitnessClass? newClass, out string createError))
+                        {
+                            SaveData();
                             Console.WriteLine($"\n[Hệ thống] Tạo lớp thành công: {newClass!.ClassName} | Mã: {newClass.ClassId} | Thời lượng: {newClass.DurationMinutes} phút | HLV: {newClass.Trainer.Name}");
+                        }
                         else
+                        {
                             Console.WriteLine($"[Lỗi] Không thể tạo lớp: {createError}");
+                        }
                         break;
 
                     case "2":
@@ -415,14 +568,20 @@ namespace OOP_project
                         {
                             case "1":
                                 classToUpdate.ClassName = ConsoleHelper.ReadNonEmptyString("Tên lớp mới: ");
+                                SaveData();
                                 Console.WriteLine("[Hệ thống] Đã cập nhật tên lớp.");
                                 break;
                             case "2":
                                 DateTime newStart = ConsoleHelper.ReadDateTime("Thời gian mới (yyyy-MM-dd HH:mm): ", futureOnly: true);
                                 if (TryUpdateClassSchedule(classToUpdate, newStart, classToUpdate.DurationMinutes, out string scheduleError))
+                                {
+                                    SaveData();
                                     Console.WriteLine("[Hệ thống] Đã cập nhật thời gian lớp học.");
+                                }
                                 else
+                                {
                                     Console.WriteLine($"[Lỗi] {scheduleError}");
+                                }
                                 break;
                             case "3":
                                 int newCap = ConsoleHelper.ReadInt("Sức chứa mới: ", min: 1);
@@ -433,14 +592,20 @@ namespace OOP_project
                                 }
                                 classToUpdate.Capacity = newCap;
                                 while (classToUpdate.Roster.Count < classToUpdate.Capacity && classToUpdate.PromoteFromWaitlist()) { }
+                                SaveData();
                                 Console.WriteLine("[Hệ thống] Đã cập nhật sức chứa lớp học.");
                                 break;
                             case "4":
                                 int newDuration = ConsoleHelper.ReadInt("Thời lượng mới (phút): ", 1, 1440);
                                 if (TryUpdateClassSchedule(classToUpdate, classToUpdate.ScheduleTime, newDuration, out string durationError))
+                                {
+                                    SaveData();
                                     Console.WriteLine("[Hệ thống] Đã cập nhật thời lượng lớp học.");
+                                }
                                 else
+                                {
                                     Console.WriteLine($"[Lỗi] {durationError}");
+                                }
                                 break;
                             default:
                                 Console.WriteLine("[Lỗi] Lựa chọn không hợp lệ.");
@@ -468,9 +633,14 @@ namespace OOP_project
                         }
 
                         if (TryAssignTrainer(fcAssign, newTr, out string reassignError))
+                        {
+                            SaveData();
                             Console.WriteLine($"[Hệ thống] Huấn luyện viên của lớp {fcAssign.ClassName} đã được cập nhật thành {newTr.Name}.");
+                        }
                         else
+                        {
                             Console.WriteLine($"[Lỗi] {reassignError}");
+                        }
                         break;
 
                     case "5":
@@ -480,9 +650,14 @@ namespace OOP_project
                         if (toDelClass != null)
                         {
                             if (TryDeleteClass(toDelClass, out string deleteClassError))
+                            {
+                                SaveData();
                                 Console.WriteLine($"[Hệ thống] Lớp học {toDelClass.ClassName} đã được xóa và các booking chưa điểm danh đã hủy.");
+                            }
                             else
+                            {
                                 Console.WriteLine($"[Lỗi] {deleteClassError}");
+                            }
                         }
                         else
                         {
@@ -548,6 +723,8 @@ namespace OOP_project
                             break;
                         }
 
+                        SaveData();
+
                         Console.WriteLine("\n[Hệ thống] Đặt lớp thành công!");
                         Console.WriteLine($"Mã đặt chỗ : {newBooking!.BookingId}");
                         Console.WriteLine($"Hội viên   : {member.Name}");
@@ -590,6 +767,7 @@ namespace OOP_project
 
                         if (cancelClass.CancelBooking(booking.BookingId))
                         {
+                            SaveData();
                             Console.WriteLine($"[Hệ thống] Đã hủy thành công booking {booking.BookingId}. Nếu có hội viên trong hàng đợi, hệ thống đã tự động đôn lên!");
                         }
                         else
@@ -622,6 +800,7 @@ namespace OOP_project
 
                         if (promoteClass.PromoteFromWaitlist())
                         {
+                            SaveData();
                             var promoted = promoteClass.Roster.Last();
                             Console.WriteLine($"[Hệ thống] Đã đôn thành công hội viên: {promoted.Member.Name} lên danh sách chính thức.");
                         }
@@ -741,6 +920,7 @@ namespace OOP_project
                         }
 
                         attClass.MarkAttendance(memId!);
+                        SaveData();
                         Console.WriteLine($"[Hệ thống] Điểm danh thành công cho hội viên: {bookingToMark.Member.Name}!");
                         break;
 

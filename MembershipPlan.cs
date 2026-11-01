@@ -11,7 +11,6 @@ namespace OOP_project
             return currentBookingCount < MaxBookingsPerMonth;
         }
 
-        // Các phương thức giữ lại để tương thích với sơ đồ UML
         public string GetPlanName() => PlanName;
         public double GetMonthlyFee() => (double)MonthlyFee;
         public int GetMaxBookingsPerMonth() => MaxBookingsPerMonth;

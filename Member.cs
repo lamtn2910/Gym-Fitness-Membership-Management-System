@@ -9,7 +9,7 @@ namespace OOP_project
         public DateTime PlanExpiryDate { get; set; }
         public int CurrentMonthlyBookings { get; private set; } = 0;
 
-        // Constructor tự sinh ID dựa trên biến static (theo yêu cầu đề bài)
+        // Constructor tự sinh ID dựa trên biến static
         public Member(string name, string email, string phoneNumber, MembershipPlan? initialPlan = null)
             : base(GenerateNextId(), name, email, phoneNumber)
         {
@@ -17,7 +17,7 @@ namespace OOP_project
             PlanExpiryDate = DateTime.Now.AddMonths(1);
         }
 
-        // Constructor cho phép truyền ID tùy chọn (dùng khi nạp dữ liệu cũ)
+        // Constructor cho phép truyền ID tùy chọn 
         public Member(string id, string name, string email, string phoneNumber, MembershipPlan? initialPlan = null)
             : base(id, name, email, phoneNumber)
         {

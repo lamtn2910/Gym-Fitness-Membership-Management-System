@@ -70,7 +70,7 @@ The project is organized into the following main source files:
   - fitnessClasses.json: Fitness class data.
   - bookings.json: Booking data.
 The booking logic is mainly located in FitnessClass.cs, while AdminScheduling.cs coordinates rules that depend on information from several classes. Membership benefits are implemented through the MembershipPlan hierarchy, and the activity report logic is separated into ActivityReportService.cs.
-4. Object-Oriented design principles
+4. Applying OOP Principles
 4.1. Encapsulation in booking management
 Classes and methods: FitnessClass.BookClass(Member member), FitnessClass.CancelBooking(string bookingId), FitnessClass.PromoteFromWaitlist(), Member.CanBookMore(), Member.IncrementBookingCount(), Member.DecrementBookingCount(), Admin.TryBookClass(...), Admin.ValidateBooking(...), and Admin.RegisterClass(...).
 
